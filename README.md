@@ -1,5 +1,14 @@
 # PlanAuto
 
+Pour le parser : se placer dans le dossier parser et utiliser la commande
+"python -B -m pddl_parser.PDDL data/glacier/domaine.pddl data/glacier/problem.pddl"
+
+Commande à modifier en fonction du fichier domaine et du fichier problem qu'on veut.
+
+Remarque : la commande crée deux fichiers dans le dossier parser, qui s'appellent domain.txt et problem.txt. 
+On peut modifier le main de PDDL.py pour modifier ça.
+
+Le parser provient de ce github : https://github.com/pucrs-automated-planning/pddl-parser
 
 
 ## Getting started
