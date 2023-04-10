@@ -11,3 +11,5 @@ if __name__ == "__main__":
     parser.print_domain_problem()
     gp = GraphPlan(parser)
     gp.build()
+    # print(len(gp.actions))
+    # print(len(gp.states[-1]))

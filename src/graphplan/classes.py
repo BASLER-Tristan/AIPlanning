@@ -74,3 +74,19 @@ class Action:
 
     def __hash__(self) -> int:
         return hash((self.action_name, *self.params.items()))
+
+
+class NullAction:
+    num: int = 0
+
+    def __init__(self) -> None:
+        self.preconditions = set()
+        self.effects = set()
+        self.id = NullAction.num
+        NullAction.num += 1
+
+    def __repr__(self) -> str:
+        return "()"
+
+    def __hash__(self) -> int:
+        return hash(self.id)

@@ -99,7 +99,7 @@ class GraphPlan:
             else:
                 new_lit = Literal(lit.predicate_name, lit.params, lit.positive)
                 new_states.add(new_lit)
-            new_action = Action("", {})
+            new_action = NullAction()
             new_actions.add(new_action)
             new_action.preconditions.add(lit)
             new_action.effects.add(new_lit)
