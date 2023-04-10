@@ -5,7 +5,7 @@
     frigo1 - frigo
     vanille chocolat fraise - parfum
     preparation1 preparation2 - preparation
-    cornet pot -contenant
+    cornet pot - contenant
     client1 - client)
   (:init
     (in-emplacement chocolat emplacement1)

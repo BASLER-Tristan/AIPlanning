@@ -295,6 +295,18 @@ class PDDL_Parser:
                 else:
                     positive.append(predicate)
 
+    def print_domain_problem(self):
+        print("Domain name: " + self.domain_name)
+        for act in self.actions:
+            print(act)
+        print("----------------------------")
+        print("Problem name: " + self.problem_name)
+        print("Predicates: " + str(self.predicates))
+        print("Objects: " + str(self.objects))
+        print("State: " + str([list(i) for i in self.state]))
+        print("Positive goals: " + str([list(i) for i in self.positive_goals]))
+        print("Negative goals: " + str([list(i) for i in self.negative_goals]))
+
 
 # -----------------------------------------------
 # Main

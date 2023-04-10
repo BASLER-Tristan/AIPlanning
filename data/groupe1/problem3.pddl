@@ -5,7 +5,7 @@
     frigo1 - frigo
     vanille chocolat fraise menthe cafe framboise poire coco citron mangue - parfum
     preparation1 preparation2 preparation3 - preparation
-    cornet pot -contenant
+    cornet pot - contenant
     client1 client2 client3 client4 client5 client6 client7 client8 client9 client10 - client)
   (:init
     (in-emplacement chocolat emplacement1)
