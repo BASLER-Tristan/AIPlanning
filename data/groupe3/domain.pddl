@@ -1,10 +1,6 @@
 (define (domain rubik)
-    (:requirements :strips :typing :equality)
-
-
+    (:requirements :strips :typing)
     (:types color)
-    (:functions (cost) - number)
-
     (:predicates
         (face1 ?f ?l ?d - color)
         (face2 ?f ?r ?d - color)
@@ -17,6 +13,8 @@
     )
 
     (:action R
+        :parameters ()
+        :precondition (and)
         :effect (and
             (forall (?f2 ?r2 ?d2 - color) (when (face2 ?f2 ?r2 ?d2)
                 (and
@@ -42,11 +40,12 @@
                     (face4 ?u8 ?r8 ?b8)
                 ))
             )
-            (increase (cost) 1)
         )
     )
 
     (:action R_p
+        :parameters ()
+        :precondition (and)
         :effect (and
             (forall (?f2 ?r2 ?d2 - color) (when (face2 ?f2 ?r2 ?d2)
                 (and
@@ -72,11 +71,12 @@
                     (face6 ?u8 ?r8 ?b8)
                 ))
             )
-            (increase (cost) 1)
         )
     )
 
     (:action U
+        :parameters ()
+        :precondition (and)
         :effect (and
             (forall (?f5 ?l5 ?u5 - color) (when (face5 ?f5 ?l5 ?u5)
                 (and
@@ -102,11 +102,12 @@
                     (face6 ?r8 ?b8 ?u8)
                 ))
             )
-            (increase (cost) 1)
         )
     )
 
     (:action U_p
+        :parameters ()
+        :precondition (and)
         :effect (and
             (forall (?f5 ?l5 ?u5 - color) (when (face5 ?f5 ?l5 ?u5)
                 (and
@@ -132,11 +133,12 @@
                     (face7 ?r8 ?b8 ?u8)
                 ))
             )
-            (increase (cost) 1)
         )
     )
 
     (:action F
+        :parameters ()
+        :precondition (and)
         :effect (and
             (forall (?f1 ?l1 ?d1 - color) (when (face1 ?f1 ?l1 ?d1)
                 (and
@@ -162,11 +164,12 @@
                     (face2 ?f6 ?u6 ?r6)
                 ))
             )
-            (increase (cost) 1)
         )
     )
 
     (:action F_p
+        :parameters ()
+        :precondition (and)
         :effect (and
             (forall (?f1 ?l1 ?d1 - color) (when (face1 ?f1 ?l1 ?d1)
                 (and
@@ -192,7 +195,6 @@
                     (face5 ?f6 ?u6 ?r6)
                 ))
             )
-            (increase (cost) 1)
         )
     )
 

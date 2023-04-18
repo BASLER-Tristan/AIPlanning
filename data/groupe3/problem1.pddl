@@ -2,7 +2,6 @@
   (:domain rubik)
   (:objects r w b g o y - color)
   (:init
-    (= (cost) 0)
     (face1 o g w)
     (face2 o b w)
     (face3 r g w)
@@ -12,7 +11,6 @@
     (face7 g o y)
     (face8 g r y)
   )
-  (:metric minimize (cost))
   (:goal (and
     (face1 o g w)
     (face2 o b w)
