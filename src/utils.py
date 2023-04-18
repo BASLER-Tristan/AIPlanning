@@ -6,7 +6,7 @@ DATA_FOLDER = "data"
 GROUP_DOMAIN = {
     "groupe1": "domain.pddl",
     "groupe2": "domain.pddl",
-    "groupe3": "domain.pddl",
+    # "groupe3": "domain.pddl", # Parser doesn't work for this group
     "groupe4": "freecell_domain.pddl",
 }
 
@@ -45,12 +45,15 @@ def get_all_domain_problem() -> List[Tuple[str, str]]:
         for problem in get_problems(group=x)
     ]
 
+
 def create_combination_dict(dictionnary):
     keys = dictionnary.keys()
     values = (dictionnary[key] for key in keys)
     combinations = list(itertools.product(*values))
     result = [dict(zip(keys, comb)) for comb in combinations]
     return result
+
+
 # See https://code.activestate.com/recipes/499299/ (How to access an element of a set using an equivalent object?)
 
 

@@ -1,15 +1,9 @@
-from src.parser.parser import *
-from src.utils import *
+from src.parser.pddlparser import PDDLParser
+from src.utils import get_all_domain_problem
 
 
 def test_parser():
-
-    for (domain, problem) in get_all_domain_problem():
-        # TODO
-        if "groupe2" in domain:
-            continue
-        if "groupe3" in domain:
-            continue
-        parser = PDDL_Parser()
-        parser.parse_domain(domain)
-        parser.parse_problem(problem)
+    for (domain_file, problem_file) in get_all_domain_problem():
+        print(domain_file, problem_file)
+        domain = PDDLParser.parse(domain_file)
+        problem = PDDLParser.parse(problem_file)
