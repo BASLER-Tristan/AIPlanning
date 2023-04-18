@@ -28,6 +28,7 @@ class Action:
     def __init__(self, name, parameters, positive_preconditions, negative_preconditions, add_effects, del_effects):
         def frozenset_of_tuples(data):
             return frozenset([tuple(t) for t in data])
+
         self.name = name
         self.parameters = tuple(parameters)  # Make parameters a tuple so we can hash this if need be
         self.positive_preconditions = frozenset_of_tuples(positive_preconditions)
@@ -40,12 +41,21 @@ class Action:
     # -----------------------------------------------
 
     def __str__(self):
-        return 'action: ' + self.name + \
-               '\n  parameters: ' + str(list(self.parameters)) + \
-               '\n  positive_preconditions: ' + str([list(i) for i in self.positive_preconditions]) + \
-               '\n  negative_preconditions: ' + str([list(i) for i in self.negative_preconditions]) + \
-               '\n  add_effects: ' + str([list(i) for i in self.add_effects]) + \
-               '\n  del_effects: ' + str([list(i) for i in self.del_effects]) + '\n'
+        return (
+            "action: "
+            + self.name
+            + "\n  parameters: "
+            + str(list(self.parameters))
+            + "\n  positive_preconditions: "
+            + str([list(i) for i in self.positive_preconditions])
+            + "\n  negative_preconditions: "
+            + str([list(i) for i in self.negative_preconditions])
+            + "\n  add_effects: "
+            + str([list(i) for i in self.add_effects])
+            + "\n  del_effects: "
+            + str([list(i) for i in self.del_effects])
+            + "\n"
+        )
 
     # -----------------------------------------------
     # Equality
@@ -80,7 +90,9 @@ class Action:
             negative_preconditions = self.replace(self.negative_preconditions, variables, assignment)
             add_effects = self.replace(self.add_effects, variables, assignment)
             del_effects = self.replace(self.del_effects, variables, assignment)
-            yield Action(self.name, assignment, positive_preconditions, negative_preconditions, add_effects, del_effects)
+            yield Action(
+                self.name, assignment, positive_preconditions, negative_preconditions, add_effects, del_effects
+            )
 
     # -----------------------------------------------
     # Replace
@@ -96,22 +108,34 @@ class Action:
             new_group.append(pred)
         return new_group
 
+    def __hash__(self) -> int:
+        return hash(
+            (
+                self.name,
+                self.parameters,
+                self.positive_preconditions,
+                self.negative_preconditions,
+                self.add_effects,
+                self.del_effects,
+            )
+        )
+
 
 # -----------------------------------------------
 # Main
 # -----------------------------------------------
-if __name__ == '__main__':
-    a = Action('move', [['?ag', 'agent'], ['?from', 'pos'], ['?to', 'pos']],
-                       [['at', '?ag', '?from'], ['adjacent', '?from', '?to']],
-                       [['at', '?ag', '?to']],
-                       [['at', '?ag', '?to']],
-                       [['at', '?ag', '?from']])
+if __name__ == "__main__":
+    a = Action(
+        "move",
+        [["?ag", "agent"], ["?from", "pos"], ["?to", "pos"]],
+        [["at", "?ag", "?from"], ["adjacent", "?from", "?to"]],
+        [["at", "?ag", "?to"]],
+        [["at", "?ag", "?to"]],
+        [["at", "?ag", "?from"]],
+    )
     print(a)
 
-    objects = {
-        'agent': ['ana', 'bob'],
-        'pos': ['p1', 'p2']
-    }
-    types = {'object': ['agent', 'pos']}
+    objects = {"agent": ["ana", "bob"], "pos": ["p1", "p2"]}
+    types = {"object": ["agent", "pos"]}
     for act in a.groundify(objects, types):
         print(act)
