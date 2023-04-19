@@ -120,6 +120,8 @@ class GraphPlan:
         return True
 
     def compute_heuristic(self):
+        if len(self.states) == 1:
+            return 0
         heuristic = 0
         reached = set(self.states[0])
         goals = set([p for p in self.states[-1] if p.predicate in self.problem.goals])
