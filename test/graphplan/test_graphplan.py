@@ -1,14 +1,14 @@
-from src.parser.parser import *
-from src.graphplan.graphplan import *
-from src.utils import *
+from src.parser.pddlparser import PDDLParser
+from src.graphplan.graphplan import GraphPlan
+from src.utils import get_domains, get_problems
 
 
-def test_build_graphplan():
+def test_graphplan():
     group = "groupe1"
-    domain = get_domains(group=group)[0]
-    for problem in get_problems(group=group):
-        parser = PDDL_Parser()
-        parser.parse_domain(domain)
-        parser.parse_problem(problem)
-        gp = GraphPlan(parser)
-        gp.build()
+    domain_file = get_domains(group=group)[0]
+    problem_file = get_problems(group=group)[0]
+    domain = PDDLParser.parse(domain_file)
+    problem = PDDLParser.parse(problem_file)
+    gp = GraphPlan(domain, problem, problem.initial_state)
+    gp.build()
+    gp.compute_heuristic()

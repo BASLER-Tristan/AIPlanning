@@ -1,89 +1,45 @@
 from dataclasses import dataclass
-from typing import List, Dict
+from typing import Tuple
 
-from src.parser.parser import PDDL_Parser
-
-
-@dataclass
-class Object:
-    name: str
-    type: str = "object"
-
-    def __repr__(self) -> str:
-        return self.name
-
-    def __hash__(self) -> int:
-        return hash(self.name)
-
-
-class ObjectDict:
-    def __init__(self, parser: PDDL_Parser):
-        self.by_types = {}
-        for type in parser.objects:
-            self.by_types[type] = [Object(name, type) for name in parser.objects[type]]
-        self.by_names = {}
-        for type in self.by_types:
-            for obj in self.by_types[type]:
-                self.by_names[obj.name] = obj
-
-    def __repr__(self) -> str:
-        return str(self.by_types)
+from src.parser.domain import _GroundedAction
 
 
 @dataclass
-class Literal:
-    predicate_name: str
-    params: List[Object]
-    positive: bool = True
+class PredicateNode:
+    predicate: Tuple[str, str, str]
 
     def __post_init__(self):
-        self.effects_of = set()
-        self.preconditions_of = set()
+        self.previous = set()
+        self.next = set()
+        self.level = 0
 
     def __repr__(self) -> str:
         params_str = ""
-        for param in self.params:
-            params_str += param.name
+        for param in self.predicate[1:]:
+            params_str += param
             params_str += ", "
-        params_str = params_str[:-2]
-        return f"{'' if self.positive else '-'}{self.predicate_name}({params_str})"
-
-    def __neg__(self):
-        return Literal(self.predicate_name, self.params, not self.positive)
+        params_str = params_str[:-2]  # Remove last ", "
+        return f"{self.predicate[0]}({params_str})"
 
     def __hash__(self) -> int:
-        return hash((self.predicate_name, *self.params, self.positive))
+        return hash(self.predicate)
 
 
-@dataclass
-class Action:
-    action_name: str
-    params: Dict[str, Object]
-
-    def __post_init__(self):
-        self.preconditions = set()
-        self.effects = set()
-
-    def __repr__(self) -> str:
-        params_str = ""
-        for param in self.params:
-            params_str += f"{param}: {self.params[param].name}"
-            params_str += ", "
-        params_str = params_str[:-2]
-        return f"{self.action_name}({params_str})"
-
-    def __hash__(self) -> int:
-        return hash((self.action_name, *self.params.items()))
+class GroundedActionNode(_GroundedAction):
+    def __init__(self, action, *args, static_predicates=[]):
+        super().__init__(action, *args, static_predicates=static_predicates)
+        self.previous = set()
+        self.next = set()
 
 
-class NullAction:
+class NullActionNode:
     num: int = 0
 
     def __init__(self) -> None:
-        self.preconditions = set()
-        self.effects = set()
-        self.id = NullAction.num
-        NullAction.num += 1
+        self.previous = set()
+        self.next = set()
+        self.id = NullActionNode.num
+        NullActionNode.num += 1
 
     def __repr__(self) -> str:
         return "()"

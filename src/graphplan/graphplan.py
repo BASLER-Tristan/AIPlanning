@@ -1,115 +1,157 @@
-from typing import Tuple, Set
+from typing import Tuple, Iterator, List, Set
 import itertools
 
-from src.graphplan.classes import *
-from src.parser.parser import PDDL_Parser
+from src.parser.domain import Domain
+from src.parser.problem import Problem, State
+from src.graphplan.classes import PredicateNode, GroundedActionNode, NullActionNode
 from src.utils import get_equivalent
 
 
 class GraphPlan:
-    def __init__(self, parser: PDDL_Parser):
-        self.parser = parser
-        self.objects = ObjectDict(self.parser)
-        self.states = [self.get_initial_state()]
+    def __init__(self, domain: Domain, problem: Problem, initial_state: State):
+        # Input parameters
+        self.domain = domain
+        self.problem = problem
+        self.initial_state = initial_state
+        # Internal variables
+        self.states = [
+            set([PredicateNode(predicate) for predicate in initial_state.predicates])
+        ]
         self.actions = []
 
-    def get_initial_state(self) -> Set[Literal]:
-        res = set()
-        for lit in self.parser.state:
-            params = [self.objects.by_names[name] for name in lit[1:]]
-            res.add(Literal(lit[0], params))
-        return res
+    def build(self) -> None:
+        while not self.is_goal_reached():
+            self.add_new_layer()
 
-    def build(self):
-        new_actions, new_states = self.get_new_actions_states()
-        self.add_null_actions(new_actions, new_states)
-        if self.stabilisation_test(new_states):
-            return
-        else:
-            self.update_states_preconditions_of(new_actions)
-            self.actions.append(new_actions)
-            self.states.append(new_states)
-            self.build()
-
-    def get_new_actions_states(self) -> Tuple[Set[Action], Set[Literal]]:
+    def add_new_layer(self) -> None:
         new_actions = set()
         new_states = set()
-        for action in self.parser.actions:
+        for grounded_action in self.get_all_grounded_actions():
+            possible, preconditions = self.is_possible_action(grounded_action)
+            if possible:
+                self.update_new_action(
+                    grounded_action, preconditions, new_actions, new_states
+                )
+        self.add_null_actions(new_actions, new_states)
+        self.update_level(new_states)
+        assert len(new_states) > len(self.states[-1])  # Avoid infinite loops
+        self.actions.append(new_actions)
+        self.states.append(new_states)
+
+    def get_all_grounded_actions(self) -> Iterator[GroundedActionNode]:
+        for a in self.domain.actions:
             possible_values = {
-                param[0]: self.objects.by_types[param[1]] for param in action.parameters
+                arg_name: self.problem.initial_state.objects[type]
+                for type, arg_name in zip(a.types, a.arg_names)
             }
-            # See https://stackoverflow.com/questions/5228158/cartesian-product-of-a-dictionary-of-lists
             for instance in (
                 dict(zip(possible_values, x))
                 for x in itertools.product(*possible_values.values())
-            ):  # Try all possible tuples of objects with correct type
-                yes = True
-                action_preconditions = []
-                for (preconditions, positive) in [
-                    (action.positive_preconditions, True),
-                    (action.negative_preconditions, False),
-                ]:
-                    if not yes:
-                        break
-                    for precondition in preconditions:
-                        if not yes:
-                            break
-                        lit = Literal(
-                            precondition[0],
-                            [instance[var] for var in precondition[1:]],
-                            positive,
-                        )
-                        if lit in self.states[-1]:
-                            lit = get_equivalent(self.states[-1], lit)
-                            action_preconditions.append(lit)
-                        else:
-                            yes = False
-                if yes:  # All preconditions are ok
-                    new_action = Action(action.name, instance)
-                    new_action.preconditions.update(action_preconditions)
-                    new_actions.add(new_action)
-                    # Effects
-                    action_effects = []
-                    for (effects, positive) in [
-                        (action.add_effects, True),
-                        (action.del_effects, False),
-                    ]:
-                        for effect in effects:
-                            lit = Literal(
-                                effect[0],
-                                [instance[var] for var in effect[1:]],
-                                positive,
-                            )
-                            if lit in new_states:
-                                lit = get_equivalent(new_states, lit)
-                            else:
-                                new_states.add(lit)
-                            lit.effects_of.add(new_action)
-                            action_effects.append(lit)
-                    new_action.effects.update(action_effects)
+            ):
+                args = [instance[arg_name] for arg_name in a.arg_names]
+                yield GroundedActionNode(a, *args)
 
-        return new_actions, new_states
+    def is_possible_action(
+        self, grounded_action: GroundedActionNode
+    ) -> Tuple[bool, List[PredicateNode]]:
+        res = []
+        for precondition in grounded_action.preconditions.pos_preconditions:
+            pn = PredicateNode(precondition)
+            if pn in self.states[-1]:
+                res.append(get_equivalent(self.states[-1], pn))
+            else:
+                return False, None
+        return True, res
+
+    def update_new_action(
+        self,
+        grounded_action: GroundedActionNode,
+        preconditions: List[PredicateNode],
+        new_actions: Set[GroundedActionNode],
+        new_states: Set[PredicateNode],
+    ) -> None:
+        # Update new_actions
+        new_actions.add(grounded_action)
+        # Update new_states
+        effects = [
+            PredicateNode(effect) for effect in grounded_action.effects.add_effects
+        ]
+        new_states.update(effects)
+        # Update links
+        for precondition in preconditions:
+            precondition.next.add(grounded_action)
+        for effect in effects:
+            get_equivalent(new_states, effect).previous.add(grounded_action)
+        grounded_action.previous.update(preconditions)
+        grounded_action.next.update(effects)
 
     def add_null_actions(
-        self, new_actions: Set[Action], new_states: Set[Literal]
-    ) -> Tuple[Set[Action], Set[Literal]]:
-        for lit in self.states[-1]:
-            if lit in new_states:
-                new_lit = get_equivalent(new_states, lit)
+        self,
+        new_actions: Set[GroundedActionNode],
+        new_states: Set[PredicateNode],
+    ) -> None:
+        for s in self.states[-1]:
+            # Update new_actions
+            a = NullActionNode()
+            new_actions.add(a)
+            # Update new_states
+            new_states.add(s)
+            s_new = get_equivalent(new_states, s)
+            # Update links
+            s.next.add(a)
+            s_new.previous.add(a)
+            a.previous.add(s)
+            a.next.add(s)
+
+    def update_level(
+        self,
+        new_states: Set[PredicateNode],
+    ) -> None:
+        for s in new_states:
+            if s in self.states[-1]:
+                s.level = get_equivalent(self.states[-1], s).level
             else:
-                new_lit = Literal(lit.predicate_name, lit.params, lit.positive)
-                new_states.add(new_lit)
-            new_action = NullAction()
-            new_actions.add(new_action)
-            new_action.preconditions.add(lit)
-            new_action.effects.add(new_lit)
-            new_lit.effects_of.add(new_action)
+                s.level = len(self.states)
 
-    def stabilisation_test(self, new_states: Set[Literal]) -> bool:
-        # Literals are increasing
-        return len(self.states[-1]) == len(new_states)
+    def is_goal_reached(self) -> bool:
+        for goal in self.problem.goals:
+            if PredicateNode(goal) not in self.states[-1]:
+                return False
+        return True
 
-    def update_states_preconditions_of(self, new_actions: Set[Action]) -> None:
-        for action in new_actions:
-            for lit in action.preconditions:
-                lit.preconditions_of.add(action)
+    def compute_heuristic(self):
+        heuristic = 0
+        reached = set(self.states[0])
+        goals = set([p for p in self.states[-1] if p.predicate in self.problem.goals])
+        new_goals = set()  # future goals of the previous level
+        while len(goals) > 0:
+            # Compute the cost of the actions that reach a goal
+            possible_actions = {}
+            for goal in goals:
+                for action in goal.previous:
+                    if not isinstance(action, NullActionNode):
+                        if action not in possible_actions:
+                            cost = sum([p.level for p in action.previous])
+                            possible_actions[action] = cost
+            # Take action with minimal cost
+            min_cost = min(possible_actions.values())
+            actions = [
+                action
+                for action in possible_actions
+                if possible_actions[action] == min_cost
+            ]
+            action = actions.pop()
+            heuristic += 1
+            # Update goals, new_goals and reached
+            for effect in action.next:
+                goals.discard(effect)
+                reached.add(effect)
+            for precondition in action.previous:
+                if precondition not in reached:
+                    new_goals.add(precondition)
+            # If all goals are satisfied, go to previous level
+            if len(goals) == 0 and len(new_goals) > 0:
+                goals.update(new_goals)
+                new_goals = set()
+
+        return heuristic
