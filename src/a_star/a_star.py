@@ -109,3 +109,13 @@ class AStar:
                 f"Cost: {cost}, Path length: {len(path)}, Heuristic: {cost - len(path) if self.with_back_cost else cost}, Time: {time.time() - t0:.2f}"
             )
         return path
+
+
+def verify(domain: Domain, problem: Problem, path: Path) -> bool:
+    a = AStar(domain, problem)
+    for action in path:
+        if a.is_possible_action(action):
+            a.current_state = a.current_state.apply(action)
+        else:
+            return False
+    return a.is_reached_goal()

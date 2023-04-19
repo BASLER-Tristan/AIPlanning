@@ -1,5 +1,5 @@
 from src.parser.pddlparser import PDDLParser
-from src.a_star.a_star import AStar
+from src.a_star.a_star import AStar, verify
 
 
 def test_a_star():
@@ -8,6 +8,8 @@ def test_a_star():
     domain = PDDLParser.parse(domain_file)
     problem = PDDLParser.parse(problem_file)
     a = AStar(domain, problem, with_back_cost=True)
-    a.solve()
+    path = a.solve()
+    assert verify(domain, problem, path)
     a2 = AStar(domain, problem, with_back_cost=False)
-    a2.solve()
+    path2 = a2.solve()
+    assert verify(domain, problem, path2)
