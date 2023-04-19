@@ -3,3 +3,6 @@ run:
 
 pytest:
 	pytest test
+
+install:
+	pip install -r requirements.txt
